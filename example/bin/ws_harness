@@ -7,6 +7,7 @@ harness="env dockeroo_quiet=true ../bin/harness"
 
 green="\033[32m"
 red="\033[31m"
+bold="\033[1m"
 reset="\033[0m"
 
 usage() {
@@ -61,6 +62,7 @@ case "$1 $2" in
     exit -11
     ;;
   *)
+    echo -e "  ${bold}Not a $(basename $0) command, delegating to dockeroo${reset}"
     $harness $@
     ;;
 esac

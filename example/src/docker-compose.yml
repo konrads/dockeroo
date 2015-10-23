@@ -1,0 +1,39 @@
+# mimic:
+# docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/../../..:/dev/host -tid "ws/server"
+# docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
+# docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
+# docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
+
+s1:
+  container_name: s1
+  hostname: s1
+  extends:
+    file: docker-compose-common.yml
+    service: server
+
+c1:
+  container_name: c1
+  hostname: c1
+  extends:
+    file: docker-compose-common.yml
+    service: client
+  links: 
+    - s1
+
+c2:
+  container_name: c2
+  hostname: c2
+  extends:
+    file: docker-compose-common.yml
+    service: client
+  links: 
+    - s1
+
+c3:
+  container_name: c3
+  hostname: c3
+  extends:
+    file: docker-compose-common.yml
+    service: client
+  links: 
+    - s1

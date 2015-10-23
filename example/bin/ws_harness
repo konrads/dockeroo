@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+harness="env dockeroo_quiet=true ../bin/harness"
+
+green="\033[32m"
+red="\033[31m"
+reset="\033[0m"
+
+usage() {
+  echo "  Usage:"
+  echo "    help:                            display this"
+  echo "    test stop:                       test with container stop/restart"
+  echo "    test pause:                      test with container pause/unpause"
+  echo "    test iptables:                   test with iptables drop/accept"
+  echo "    report:                          report from the last run"
+  echo "    + any dockeroo commands"
+  exit 1
+}
+
+create_cluster() {
+  echo "  ...deleting cluster"
+  docker rm -f s1 c1 c2 c3
+}
+
+delete_cluster() {
+  echo "  ...creating cluster nodes"
+  docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/../../..:/dev/host -tid "ws/server"
+  docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
+  docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
+  docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
+  # docker-compose -f src/docker-compose.yml up
+}
+
+if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
+
+set -e
+case "$1 $2" in
+  "cluster delete")
+    create_cluster
+    ;;
+  "cluster create")
+    delete_cluster
+    ;;
+  "test stop")
+    echo -e "  ${red}test stop unimplemented${reset}"
+    exit -11
+    ;;
+  "test pause")
+    echo -e "  ${red}test stop unimplemented${reset}"
+    exit -11
+    ;;
+  "test iptables")
+    echo -e "  ${red}test stop unimplemented${reset}"
+    exit -11
+    ;;
+  "report ")
+    echo -e "  ${red}report unimplemented${reset}"
+    exit -11
+    ;;
+  *)
+    $harness $@
+    ;;
+esac
+
+echo

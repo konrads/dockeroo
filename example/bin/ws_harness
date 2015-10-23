@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+curr_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. $curr_dir/test_commons.sh
+
 harness="env dockeroo_quiet=true ../bin/harness"
 
 green="\033[32m"

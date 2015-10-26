@@ -1,10 +1,7 @@
-# FIXME: REMOVE - bootstrapping test
-
 # Version 0.0.1
 FROM ws/base
 
-ADD fs/usr/bin/bootstrap.sh /usr/bin/bootstrap.sh
-RUN chmod uo+x /usr/bin/bootstrap.sh
-
 VOLUME ["/dev/host"]
-ENTRYPOINT ["/usr/bin/bootstrap.sh"]
+ENTRYPOINT ["erl"]
+ENV LIBS=/dev/host/apps/erl/server/deps
+CMD ["-pa", "/dev/host/apps/erl/server/ebin", "-s", "ws_client"]

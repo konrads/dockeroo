@@ -1,0 +1,12 @@
+{application, ws_client, [
+  {description, "Websocket test client"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications, [
+    stdlib,
+    kernel,
+    crypto,
+    ssl]},
+  {mod, { ws_client_app, []}},
+  {env, []}
+]}.

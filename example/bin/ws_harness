@@ -69,7 +69,7 @@ case "$1 $2" in
     # another good
     echo msg4 | docker run --name "c4" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
     expected_msg_log=$'msg1\nmsg2\nmsg4' # note: expecting the paused msg, but not iptables drop
-    assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"
+    assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"  # remove ^Ms
     ;;
   "test stop")
     echo -e "  ${red}test stop unimplemented${reset}"

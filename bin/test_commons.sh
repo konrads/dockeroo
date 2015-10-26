@@ -5,9 +5,9 @@ red="\033[31m"
 reset="\033[0m"
 
 assert_eq() {
-  if [ "$2" == "$3" ]
+  if [ "$2" = "$3" ]
   then
-    echo -e "  ${green}$1: $2 == $3${reset}"
+    echo -e "  ${green}$1: $2 = $3${reset}"
   else
     echo -e "  ${red}$1: $2 <> $3${reset}"
     exit -1

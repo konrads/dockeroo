@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 curr_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-. $curr_dir/test_commons.sh
-
-harness="env dockeroo_quiet=true ../bin/harness"
+dockeroo_dir=../bin
+. $dockeroo_dir/test_commons.sh
+harness="env dockeroo_quiet=true $dockeroo_dir/harness"
 
 green="\033[32m"
 red="\033[31m"
@@ -13,20 +13,23 @@ reset="\033[0m"
 usage() {
   echo "  Usage:"
   echo "    help:                            display this"
+  echo "    test tools:                      test dockeroo tools"
   echo "    test stop:                       test with container stop/restart"
   echo "    test pause:                      test with container pause/unpause"
   echo "    test iptables:                   test with iptables drop/accept"
   echo "    report:                          report from the last run"
-  echo "    + any dockeroo commands"
+  echo "    ... or dockeroo commands:"
+  $harness help
   exit 1
 }
 
-create_cluster() {
+delete_cluster() {
   echo "  ...deleting cluster"
-  docker rm -f s1 c1 c2 c3
+  docker unpause s1 c1 c2 c3 c4 c5
+  docker rm -f s1 c1 c2 c3 c4 c5
 }
 
-delete_cluster() {
+create_cluster() {
   echo "  ...creating cluster nodes"
   docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/../../..:/dev/host -tid "ws/server"
   docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
@@ -37,13 +40,36 @@ delete_cluster() {
 
 if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
 
-set -e
 case "$1 $2" in
   "cluster delete")
-    create_cluster
+    delete_cluster
     ;;
   "cluster create")
+    set -e
+    create_cluster
+    ;;
+  "test tools")
     delete_cluster
+    set -e
+    docker run --name "s1" --hostname "s1" --privileged -tid --entrypoint=netcat "ws/server" -lk 1234
+    # test 'good' scenario, no pauses/stops/iptables manipulation
+    echo msg1 | docker run --name "c1" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
+    # test the paused scenario
+    $harness node pause s1
+    set +e
+    echo msg2 | docker run --name "c2" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
+    set -e
+    $harness node unpause s1
+    # switch iptables off
+    $harness iptables drop s1
+    set +e
+    echo msg3-should-not-show | docker run --name "c3" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
+    set -e
+    $harness iptables accept s1
+    # another good
+    echo msg4 | docker run --name "c4" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
+    expected_msg_log=$'msg1\nmsg2\nmsg4' # note: expecting the paused msg, but not iptables drop
+    assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"
     ;;
   "test stop")
     echo -e "  ${red}test stop unimplemented${reset}"

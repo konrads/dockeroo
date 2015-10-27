@@ -19,21 +19,21 @@ banner() {
 
 usage() {
   echo "  Usage:"
-  echo "    help:                            display this"
-  echo "    images create [--all]:           create node image"
-  echo "    images delete [--all]:           delete node image, --all includes */base.*"
-  echo "    cluster status:                  show images/nodes status"
-  echo "    cluster cleanup:                 delete dangling (untagged) and debug images/nodes"
-  echo "    node pause <id>:                 pause node <id>"
-  echo "    node unpause <id>:               unpause node <id>"
-  echo "    node attach <id>:                attach to node <id>"
-  echo "    node logs <id>:                  show log for node <id>"
-  echo "    node exec <id> [<cmds>...]:      run [<cmds>...] on node <id>"
-  echo "    node revive <id>:                revive dead node in a new container, running bash"
-  echo "    iptables accept <id>:            iptables accept on node <id>"
-  echo "    iptables drop <id> [<prob>]:     iptables drop on node <id> if exceeds <prob> (<prob> defaults to 1)"
-  echo "    iptables status <id>:            iptables -L on node <id>"
-  echo "    report:                          produce report"
+  echo "    help:                                display this"
+  echo "    images create [--all]:               create node image"
+  echo "    images delete [--all]:               delete node image, --all includes */base.*"
+  echo "    cluster status:                      show images/nodes status"
+  echo "    cluster cleanup:                     delete dangling (untagged) and debug images/nodes"
+  echo "    node pause <id>:                     pause node <id>"
+  echo "    node unpause <id>:                   unpause node <id>"
+  echo "    node attach <id>:                    attach to node <id>"
+  echo "    node logs <id>:                      show log for node <id>"
+  echo "    node exec <id> [<cmds>...]:          run [<cmds>...] on node <id>"
+  echo "    node revive <id>:                    revive dead node in a new container, running bash"
+  echo "    iptables accept <id>:                iptables accept on node <id>"
+  echo "    iptables drop <chain> <id> [<prob>]: iptables drop on INPUT/OUTPUT <chain> on node <id> if exceeds <prob> (<prob> defaults to 1)"
+  echo "    iptables status <id>:                iptables -L on node <id>"
+  echo "    report:                              produce report"
   exit 1
 }
 
@@ -45,9 +45,17 @@ verify_nodeid() {
   fi
 }
 
+verify_chain() {
+  if [ "$1" != "INPUT" ] && [ "$1" != "OUTPUT" ]
+  then
+    echo "  No valid chain specified: $1"
+    usage
+  fi
+}
+
 dockerable_dirs() {
   dirs=$(find src -name "Dockerfile" -exec dirname {} \; | sort)
-  if [ "$1" == "--all" ]
+  if [ "$1" = "--all" ]
   then
     echo $dirs
   else
@@ -205,19 +213,21 @@ case "$1 $2" in
     docker exec -tiu root $nodeid iptables -F
     ;;
   "iptables drop")
-    verify_nodeid $3
-    nodeid=$3
+    verify_chain $3
+    chain=$3
+    verify_nodeid $4
+    nodeid=$4
     set -e -u
-    if [ $# -gt 3 ]
+    if [ $# -gt 4 ]
     then
-      prob=$4
-      echo "  ...drop traffic to node $nodeid over probability $prob..."
+      prob=$5
+      echo "  ...drop traffic to node $nodeid on chain $chain over probability $prob..."
       docker exec -tiu root $nodeid iptables -F
-      docker exec -tiu root $nodeid iptables -A INPUT -m statistic --mode random --probability $prob -j DROP
+      docker exec -tiu root $nodeid iptables -A $chain -m statistic --mode random --probability $prob -j DROP
     else
-      echo "  ...drop all traffic to node $nodeid..."
+      echo "  ...drop all traffic to node $nodeid on chain $chain..."
       docker exec -tiu root $nodeid iptables -F
-      docker exec -tiu root $nodeid iptables -A INPUT -j DROP
+      docker exec -tiu root $nodeid iptables -A $chain -j DROP
     fi
     ;;
   "iptables status")

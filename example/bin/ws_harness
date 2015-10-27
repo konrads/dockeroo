@@ -12,13 +12,16 @@ reset="\033[0m"
 
 usage() {
   echo "  Usage:"
-  echo "    help:                            display this"
-  echo "    cluster delete:                  delete cluster"
-  echo "    cluster create:                  create cluster"
-  echo "    test tools:                      test dockeroo tools"
-  echo "    test erl-iptables:               test Erlang server and iptables drop/accept"
-  echo "    test scala-iptables:               test Scala server and iptables drop/accept"
-  echo "    report:                          report from the last run"
+  echo "    help:                                display this"
+  echo "    cluster delete:                      delete cluster"
+  echo "    cluster create-ws:                   create WS cluster"
+  echo "    cluster create-http:                 create HTTP cluster"
+  echo "    test tools:                          test dockeroo tools"
+  echo "    test erl-ws-iptables:                test Erlang WS server and iptables drop/accept"
+  echo "    test erl-http-iptables:              test Erlang HTTP server and iptables drop/accept"
+  echo "    test scala-ws-iptables:              test Scala WS server and iptables drop/accept"
+  echo "    test scala-http-iptables:            test Scala HTTP server and iptables drop/accept"
+  echo "    report:                              report from the last run"
   echo "    ... or dockeroo commands:"
   $harness help
   exit 1
@@ -30,13 +33,23 @@ delete_cluster() {
   docker rm -f s1 c1 c2 c3
 }
 
-create_cluster() {
-  echo "  ...creating cluster nodes"
-  docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/apps/erl/ws_server:/dev/host-server -tid "ws/server_erl" ws_server
-  docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/apps/erl/ws_client:/dev/host-client --link s1:s1 -tid "ws/client" ws_client start_link ws://s1:8888/echo
-  docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/apps/erl/ws_client:/dev/host-client --link s1:s1 -tid "ws/client" ws_client start_link ws://s1:8888/echo
-  docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/apps/erl/ws_client:/dev/host-client --link s1:s1 -tid "ws/client" ws_client start_link ws://s1:8888/echo
-  # docker-compose -f src/docker-compose.yml up
+create_erl_server() {
+  echo "  ...creating erl server"
+  docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/apps/erl/echo_server:/dev/host-server -tid "ws/server_erl" echo_server
+}
+
+create_erl_ws_clients() {
+  echo "  ...creating erl ws clients"
+  docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_ws start ws://s1:8888/echo-ws
+  docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_ws start ws://s1:8888/echo-ws
+  docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_ws start ws://s1:8888/echo-ws
+}
+
+create_erl_http_clients() {
+  echo "  ...creating erl http clients"
+  docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_http start http://s1:8888/echo-http
+  docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_http start http://s1:8888/echo-http
+  docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_http start http://s1:8888/echo-http
 }
 
 stop_cluster() {
@@ -49,15 +62,21 @@ case "$1 $2" in
   "cluster delete")
     delete_cluster
     ;;
-  "cluster create")
+  "cluster create-ws")
     set -e
-    create_cluster
+    create_erl_server
+    create_erl_ws_clients
+    ;;
+  "cluster create-http")
+    set -e
+    create_erl_server
+    create_erl_http_clients
     ;;
   "test tools")
     delete_cluster
     docker rm -f c4 c5
     set -e
-    docker run --name "s1" --hostname "s1" --privileged -tid --entrypoint=netcat "ws/server" -lk 1234
+    docker run --name "s1" --hostname "s1" --privileged -tid --entrypoint=netcat "ws/server_erl" -lk 1234
     # test 'good' scenario, no pauses/stops/iptables manipulation
     echo msg1 | docker run --name "c1" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
     # test the paused scenario
@@ -67,7 +86,7 @@ case "$1 $2" in
     set -e
     $harness node unpause s1
     # switch iptables off
-    $harness iptables drop s1
+    $harness iptables drop INPUT s1
     set +e
     echo msg3-should-not-show | docker run --name "c3" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
     set -e
@@ -77,18 +96,37 @@ case "$1 $2" in
     expected_msg_log=$'msg1\nmsg2\nmsg4' # note: expecting the paused msg, but not iptables drop
     assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"  # remove ^Ms
     ;;
-  "test erl-iptables")
+  "test erl-ws-iptables")
     delete_cluster
     set -e
-    create_cluster
+    create_erl_server
+    create_erl_ws_clients
     i=1
-    while [ $i -lt 10 ]
+    while [ $i -le 5 ]
     do
       echo "  ...$i: flip iptables"
-      $harness iptables drop s1
-      sleep 5
+      $harness iptables drop OUTPUT s1
+      sleep 10
       $harness iptables accept s1
-      sleep 5
+      sleep 10
+      i=$[$i+1]
+    done
+    echo "  ...stopping cluster"
+    stop_cluster
+    ;;
+  "test erl-http-iptables")
+    delete_cluster
+    set -e
+    create_erl_server
+    create_erl_http_clients
+    i=1
+    while [ $i -le 5 ]
+    do
+      echo "  ...$i: flip iptables"
+      $harness iptables drop OUTPUT s1
+      sleep 10
+      $harness iptables accept s1
+      sleep 10
       i=$[$i+1]
     done
     echo "  ...stopping cluster"
@@ -100,6 +138,7 @@ case "$1 $2" in
     ;;
   "report ")
     echo "  ...merge reports cluster"
+    mkdir -p report
     docker logs c1 > report/raw.csv
     docker logs c2 | tail -n+2 >> report/raw.csv
     docker logs c3 | tail -n+2 >> report/raw.csv

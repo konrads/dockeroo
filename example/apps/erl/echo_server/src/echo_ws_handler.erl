@@ -1,13 +1,7 @@
 %% Simple echo server
--module(ws_server).
+-module(echo_ws_handler).
 
 -behaviour(cowboy_websocket_handler).
-
-%% public API
--export([
-  start/0,
-  start/1
-]).
 
 %% handler
 -export([
@@ -16,20 +10,6 @@
   websocket_handle/3,
   websocket_info/3,
   websocket_terminate/3]).
-
-% to be started once only!
-start([]) ->
-  start().
-
-start() ->
-  application:ensure_all_started(cowboy),
-  Dispatch = cowboy_router:compile([
-    {'_', [
-      {"/echo", ?MODULE, []}
-    ]}
-  ]),
-  {ok, _} = cowboy:start_http(http, 100, [{port, 8888}],
-    [{env, [{dispatch, Dispatch}]}]).
 
 init({tcp, http}, _Req, _Opts) ->
   {upgrade, protocol, cowboy_websocket}.

@@ -1,12 +1,12 @@
--module(ws_client).
+-module(client_ws).
 
--include("ws_client.hrl").
+-include("client.hrl").
 
 -behaviour(websocket_client).
 
 -export([
-  start_link/0,
-  start_link/1,
+  start/0,
+  start/1,
   init/1,
   ondisconnect/2,
   onconnect/2,
@@ -24,15 +24,15 @@
   delay=10
 }).
 
-start_link() ->
-  start_link(["ws://s1:localhost/echo"]).
+start() ->
+  start(["ws://localhost:8888/echo-ws"]).
 
-start_link([Url]) ->
+start([Url]) ->
   websocket_client:start_link(Url, ?MODULE, []).
 
 init([]) ->
   {ok, Hostname} = inet:gethostname(),
-  Delay = os:getenv("MESSAGE_DELAY", 10),
+  Delay = list_to_integer(os:getenv("MESSAGE_DELAY", "10")),
   Ctx = #ws_client_ctx{hostname=Hostname, delay=Delay},
   io:format("client,id,status,ts,delta\n"),
   {reconnect, Ctx}.

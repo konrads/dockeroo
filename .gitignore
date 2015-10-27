@@ -2,3 +2,4 @@ example/apps/erl/**/deps
 example/apps/erl/**/ebin
 **/erl_crash.dump
 example/report
+**/.DS_Store

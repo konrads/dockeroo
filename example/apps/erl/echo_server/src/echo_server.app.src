@@ -1,0 +1,10 @@
+{application, echo_server, [
+  {description, "Http/Websocket echo server"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications, [
+    stdlib,
+    kernel]},
+  % {mod, { echo_server_app, []}}
+  {env, []}
+]}.

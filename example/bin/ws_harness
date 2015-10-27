@@ -13,10 +13,11 @@ reset="\033[0m"
 usage() {
   echo "  Usage:"
   echo "    help:                            display this"
+  echo "    cluster delete:                  delete cluster"
+  echo "    cluster create:                  create cluster"
   echo "    test tools:                      test dockeroo tools"
-  echo "    test stop:                       test with container stop/restart"
-  echo "    test pause:                      test with container pause/unpause"
-  echo "    test iptables:                   test with iptables drop/accept"
+  echo "    test erl-iptables:               test Erlang server and iptables drop/accept"
+  echo "    test scala-iptables:               test Scala server and iptables drop/accept"
   echo "    report:                          report from the last run"
   echo "    ... or dockeroo commands:"
   $harness help
@@ -25,17 +26,21 @@ usage() {
 
 delete_cluster() {
   echo "  ...deleting cluster"
-  docker unpause s1 c1 c2 c3 c4 c5
-  docker rm -f s1 c1 c2 c3 c4 c5
+  docker unpause s1 c1 c2 c3
+  docker rm -f s1 c1 c2 c3
 }
 
 create_cluster() {
   echo "  ...creating cluster nodes"
-  docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/../../..:/dev/host -tid "ws/server"
-  docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
-  docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
-  docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/../../..:/dev/host --link s1:s1 -tid "ws/client"
+  docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/apps/erl/ws_server:/dev/host-server -tid "ws/server_erl" ws_server
+  docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/apps/erl/ws_client:/dev/host-client --link s1:s1 -tid "ws/client" ws_client start_link ws://s1:8888/echo
+  docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/apps/erl/ws_client:/dev/host-client --link s1:s1 -tid "ws/client" ws_client start_link ws://s1:8888/echo
+  docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/apps/erl/ws_client:/dev/host-client --link s1:s1 -tid "ws/client" ws_client start_link ws://s1:8888/echo
   # docker-compose -f src/docker-compose.yml up
+}
+
+stop_cluster() {
+  docker stop c1 c2 c3 s1
 }
 
 if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
@@ -50,6 +55,7 @@ case "$1 $2" in
     ;;
   "test tools")
     delete_cluster
+    docker rm -f c4 c5
     set -e
     docker run --name "s1" --hostname "s1" --privileged -tid --entrypoint=netcat "ws/server" -lk 1234
     # test 'good' scenario, no pauses/stops/iptables manipulation
@@ -71,21 +77,32 @@ case "$1 $2" in
     expected_msg_log=$'msg1\nmsg2\nmsg4' # note: expecting the paused msg, but not iptables drop
     assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"  # remove ^Ms
     ;;
-  "test stop")
-    echo -e "  ${red}test stop unimplemented${reset}"
-    exit -11
+  "test erl-iptables")
+    delete_cluster
+    set -e
+    create_cluster
+    i=1
+    while [ $i -lt 10 ]
+    do
+      echo "  ...$i: flip iptables"
+      $harness iptables drop s1
+      sleep 5
+      $harness iptables accept s1
+      sleep 5
+      i=$[$i+1]
+    done
+    echo "  ...stopping cluster"
+    stop_cluster
     ;;
-  "test pause")
-    echo -e "  ${red}test stop unimplemented${reset}"
-    exit -11
-    ;;
-  "test iptables")
-    echo -e "  ${red}test stop unimplemented${reset}"
+  "test scala-iptables")
+    echo -e "  ${red}test scala-iptables unimplemented${reset}"
     exit -11
     ;;
   "report ")
-    echo -e "  ${red}report unimplemented${reset}"
-    exit -11
+    echo "  ...merge reports cluster"
+    docker logs c1 > report/raw.csv
+    docker logs c2 | tail -n+2 >> report/raw.csv
+    docker logs c3 | tail -n+2 >> report/raw.csv
     ;;
   *)
     echo -e "  ${bold}Not a $(basename $0) command, delegating to dockeroo${reset}"

@@ -21,7 +21,7 @@ usage() {
   echo "  Usage:"
   echo "    help:                            display this"
   echo "    images create [--all]:           create node image"
-  echo "    images delete [--all]:           delete node image, --all includes */_base"
+  echo "    images delete [--all]:           delete node image, --all includes */base.*"
   echo "    cluster status:                  show images/nodes status"
   echo "    cluster cleanup:                 delete dangling (untagged) and debug images/nodes"
   echo "    node pause <id>:                 pause node <id>"
@@ -51,7 +51,7 @@ dockerable_dirs() {
   then
     echo $dirs
   else
-    echo $dirs | sed 's/[^ \t].*base//g'
+    echo $dirs | sed 's/[^ ].*base[^ ]*//g'
   fi
 }
 

@@ -25,8 +25,8 @@ loop(Url, Hostname, Delay, Id) ->
           io:format("~s,~B,success,~B,~B\n", [Hostname, Id, StartTs, Delta]);
         {ok, {{_Version, _InvalidHttpCode, _ReasonPhrase}, _Headers, _Body}} ->
           io:format("~s,~B,invalid_http_code,~B,~B\n", [Hostname, Id, StartTs, Delta]);
-        {error, _} ->
-          io:format("~s,~B,error,~B,~B\n", [Hostname, Id, StartTs, Delta])
+        {error, Reason} ->
+          io:format("~s,~B,~p,~B,~B\n", [Hostname, Id, Reason, StartTs, Delta])
         end
     end),
   timer:sleep(Delay),

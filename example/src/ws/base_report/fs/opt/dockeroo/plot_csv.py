@@ -2,6 +2,8 @@
 
 # requires:
 # yum install gcc gcc-c++ freetype-devel libpng-devel python-devel python-pip
+# or
+# apt-get install python-dev build-essential libfreetype6-dev libpng12-dev pkg-config
 # pip install numpy pandas matplotlib
 
 import pandas as pd
@@ -20,6 +22,8 @@ parser = argparse.ArgumentParser(description='Generate report charts.')
 parser.add_argument('data_file', help='data csv file, with header')
 parser.add_argument('xaxis', help='x axis')
 parser.add_argument('yaxis', help='y axis')
+parser.add_argument('filters', help='filters ie. column=value', nargs='*')
+parser.add_argument('--name', type=str, help='alternative graph name')
 parser.add_argument('--xsize', type=int, default=10, help='graph X size')
 parser.add_argument('--ysize', type=int, default=5, help='graph Y size')
 parser.add_argument('--colour', type=str, default='#000066', help='graph colour')
@@ -28,9 +32,12 @@ parser.add_argument('--marker', type=str, default='.', choices=[',', '+', '.', '
 parser.add_argument('--markersize', type=float, default=5.0, help='scatter plot marker size')
 parser.add_argument('--linestyle', type=str, default='-', help='line plot line style')
 parser.add_argument('--type', default='all', choices=choice_types)
-parser.add_argument('--exclude', type=str, default='(Summary.*|summary.*|Elapsed.*)')
-parser.add_argument('--filter-additional-headers', type=bool, default=True, help='filter out multiple headers (first line)')
 args = parser.parse_args()
+
+if not args.name:
+  args.name = args.data_file
+
+filters = [f.split('=') for f in args.filters]
 
 # choose plot type, or all
 if args.type == 'all':
@@ -39,22 +46,7 @@ else:
     types = [args.type]
 
 # read in the data
-data = None
-first_line = None
-with open(args.data_file) as f:
-    for line in f:
-        if not first_line:
-            first_line = line
-            data = first_line
-        elif args.filter_additional_headers and line == first_line:
-            pass
-        elif not re.match(args.exclude, line):
-            data += line
-
-df = pd.read_csv(StringIO.StringIO(data), na_values=['na'], skiprows=-2)
-
-if args.norm_x:
-    df[args.xaxis] = df[args.xaxis] - min(df[args.xaxis])
+df = pd.read_csv(args.data_file, na_values=['na'])
 
 # validate axis exist in csv
 if args.xaxis not in df:
@@ -63,6 +55,23 @@ if args.xaxis not in df:
 if args.yaxis not in df:
     print 'Error: Y axis %s is not a valid CSV column!' % args.yaxis 
     exit(1)
+for [c, v] in filters:
+    if c not in df.columns:
+        print 'Filter column %s not in file %s!' % (c, args.data_file)
+        exit(1)
+
+# normalize x axis, if required
+if args.norm_x:
+    df[args.xaxis] = df[args.xaxis] - min(df[args.xaxis])
+
+# apply filters
+for [c, v] in filters:
+    df = df[df[c] == v]
+
+# cannot print empty data sets
+if not len(df):
+    print "...no data available..."
+    exit(2)
 
 # start plotting
 matplotlib.rc('font', size=8)
@@ -71,21 +80,21 @@ matplotlib.rcParams['figure.figsize'] = args.xsize, args.ysize
 for t in types:
     print 'Generating %s...' % t
     if t == 'histogram':
-        plt.hist(df[args.yaxis], color=args.colour)
+        plt.hist(df[args.yaxis].values, color=args.colour)
         plt.xlabel(args.xaxis)
         plt.ylabel(args.yaxis)
         plt.tight_layout()
-        plt.savefig(args.data_file+'.histogram.png', transparent=True)
+        plt.savefig(args.name+'.histogram.png', transparent=True)
         plt.clf()    
     else:
         if t == 'scatter':
             marker = args.marker
             linestyle = ''
-            chart_file = args.data_file+'.scatter.png'
+            chart_file = args.name+'.scatter.png'
         else:
             marker = ''
             linestyle = args.linestyle
-            chart_file = args.data_file+'.line.png'
+            chart_file = args.name+'.line.png'
         plt.plot(df[args.xaxis], df[args.yaxis], color=args.colour, markeredgecolor=args.colour, marker=marker, linestyle=linestyle, markersize=args.markersize)
         plt.xlabel(args.xaxis)
         plt.ylabel(args.yaxis)

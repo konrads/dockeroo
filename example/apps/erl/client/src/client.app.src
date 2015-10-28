@@ -7,6 +7,6 @@
     kernel,
     crypto,
     ssl]},
-  {mod, { client_app, []}},
+  % {mod, { client_app, []}},
   {env, []}
 ]}.

@@ -1,5 +1,6 @@
+**/erl_crash.dump
+**/.DS_Store
+**/.rebar
 example/apps/erl/**/deps
 example/apps/erl/**/ebin
-**/erl_crash.dump
 example/report
-**/.DS_Store

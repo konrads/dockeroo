@@ -11,7 +11,7 @@ start([Url]) ->
   ok = application:start(inets),
   {ok, Hostname} = inet:gethostname(),
   Delay = list_to_integer(os:getenv("MESSAGE_DELAY", "10")),
-  io:format("client,id,status,ts,delta\n"),
+  io:format("status,client,id,ts,delta\n"),
   loop(Url, Hostname, Delay, 0).
 
 loop(Url, Hostname, Delay, Id) ->
@@ -22,11 +22,11 @@ loop(Url, Hostname, Delay, Id) ->
       Delta = now_ts() - StartTs,
       case Resp of
         {ok, {{_Version, 200, _ReasonPhrase}, _Headers, _Body}} ->
-          io:format("~s,~B,success,~B,~B\n", [Hostname, Id, StartTs, Delta]);
+          io:format("success,~s,~B,~B,~B\n", [Hostname, Id, StartTs, Delta]);
         {ok, {{_Version, _InvalidHttpCode, _ReasonPhrase}, _Headers, _Body}} ->
-          io:format("~s,~B,invalid_http_code,~B,~B\n", [Hostname, Id, StartTs, Delta]);
+          io:format("invalid_http_code,~s,~B,~B,~B\n", [Hostname, Id, StartTs, Delta]);
         {error, Reason} ->
-          io:format("~s,~B,~p,~B,~B\n", [Hostname, Id, Reason, StartTs, Delta])
+          io:format("~p,~s,~B,~B,~B\n", [Reason, Hostname, Id, StartTs, Delta])
         end
     end),
   timer:sleep(Delay),

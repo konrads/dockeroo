@@ -34,7 +34,7 @@ init([]) ->
   {ok, Hostname} = inet:gethostname(),
   Delay = list_to_integer(os:getenv("MESSAGE_DELAY", "10")),
   Ctx = #ws_client_ctx{hostname=Hostname, delay=Delay},
-  io:format("client,id,status,ts,delta\n"),
+  io:format("status,client,id,ts,delta\n"),
   {reconnect, Ctx}.
 
 onconnect(_ConnState, Ctx) ->
@@ -49,11 +49,11 @@ websocket_handle({binary, <<ReplyId:?ID_LENGTH>>}, _ConnState, #ws_client_ctx{jo
   EndTs = now_ts(),
   Ctx2 = case Jobs of
     #{ReplyId := StartTs} ->
-      io:format("~s,~B,success,~b,~b\n", [Hostname, ReplyId, EndTs, EndTs-StartTs]),
+      io:format("success,~s,~B,~b,~b\n", [Hostname, ReplyId, EndTs, EndTs-StartTs]),
       Jobs2 = maps:remove(ReplyId, Jobs),
       Ctx#ws_client_ctx{jobs=Jobs2};
     _ ->
-      io:format("~s,~B,invalid_id,~b,-1\n", [Hostname, ReplyId, EndTs]),
+      io:format("invalid_id,~s,~B,~b,-1\n", [Hostname, ReplyId, EndTs]),
       Ctx
   end,
   {ok, Ctx2};

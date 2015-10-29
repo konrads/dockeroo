@@ -3,7 +3,7 @@ FROM ubuntu:latest
 
 # add plot_csv
 RUN mkdir -p /opt/dockeroo
-ADD fs/opt/dockeroo/* /opt/dockeroo
+ADD fs/opt/dockeroo/* /opt/dockeroo/
 RUN chmod uo+x /opt/dockeroo/*.py
 
 # install minial linux and python packages

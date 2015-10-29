@@ -10,8 +10,6 @@ import pandas as pd
 import matplotlib.pylab as plt
 import matplotlib
 import argparse
-import re
-import StringIO
 
 TYPES = ['scatter', 'line', 'histogram']
 choice_types = TYPES[:]

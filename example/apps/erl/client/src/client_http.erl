@@ -11,22 +11,23 @@ start([Url]) ->
   ok = application:start(inets),
   {ok, Hostname} = inet:gethostname(),
   Delay = list_to_integer(os:getenv("MESSAGE_DELAY", "10")),
-  io:format("status,client,id,ts,delta\n"),
+  io:format("status,client,req_id,ts\n"),
   loop(Url, Hostname, Delay, 0).
 
 loop(Url, Hostname, Delay, Id) ->
   spawn(
     fun() ->
       StartTs = now_ts(),
+      io:format("start,~s,~b,~b\n", [Hostname, Id, StartTs]),
       Resp = httpc:request(Url),
-      Delta = now_ts() - StartTs,
+      EndTs = now_ts(),
       case Resp of
         {ok, {{_Version, 200, _ReasonPhrase}, _Headers, _Body}} ->
-          io:format("success,~s,~B,~B,~B\n", [Hostname, Id, StartTs, Delta]);
+          io:format("end,~s,~b,~b\n", [Hostname, Id, EndTs]);
         {ok, {{_Version, _InvalidHttpCode, _ReasonPhrase}, _Headers, _Body}} ->
-          io:format("invalid_http_code,~s,~B,~B,~B\n", [Hostname, Id, StartTs, Delta]);
+          io:format("invalid_http_code,~s,~b,~b\n", [Hostname, Id, EndTs]);
         {error, Reason} ->
-          io:format("~p,~s,~B,~B,~B\n", [Reason, Hostname, Id, StartTs, Delta])
+          io:format("~p,~s,~b,~b\n", [Reason, Hostname, Id, EndTs])
         end
     end),
   timer:sleep(Delay),

@@ -16,7 +16,7 @@ TYPES = ['scatter', 'line', 'histogram']
 choice_types = TYPES[:]
 choice_types.append('all')
 
-def plot(df, name, xaxis, yaxis, xsize=10, ysize=5, norm_x=True, colour='#000066', marker='.', markersize=5.0, linestyle='-', types=choice_types, **filters):
+def plot(df, name, xaxis, yaxis, xsize=8, ysize=4, norm_x=True, colour='#000066', marker='.', markersize=5.0, linestyle='-', types=choice_types, **filters):
     # normalize x axis, if required
     if norm_x:
         df[xaxis] = df[xaxis] - min(df[xaxis])

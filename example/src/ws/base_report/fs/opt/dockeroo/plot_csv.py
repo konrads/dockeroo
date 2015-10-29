@@ -81,8 +81,6 @@ def main():
     filters = [f.split('=') for f in args.filters]
     filters = { fs[0]: fs[1] for fs in filters }
     
-    print filters
-
     # choose plot type, or all
     if args.type == 'all':
         types = TYPES

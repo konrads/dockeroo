@@ -26,7 +26,9 @@ loop(Url, Hostname, Delay, Id) ->
           io:format("end,~s,~b,~b\n", [Hostname, Id, EndTs]);
         {ok, {{_Version, _InvalidHttpCode, _ReasonPhrase}, _Headers, _Body}} ->
           io:format("invalid_http_code,~s,~b,~b\n", [Hostname, Id, EndTs]);
-        {error, Reason} ->
+        {error, Reason} when is_atom(Reason) ->
+          io:format("~p,~s,~b,~b\n", [Reason, Hostname, Id, EndTs]);
+        {error, {Reason, _Detail}} ->
           io:format("~p,~s,~b,~b\n", [Reason, Hostname, Id, EndTs])
         end
     end),

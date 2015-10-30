@@ -10,7 +10,7 @@ Docker based tests. Organized in:
 
 Run the example
 ---------------
-'''bash
+```bash
 > cd example
 
 > # if re-running
@@ -31,11 +31,11 @@ Run the example
 > # generate report named 'HTTP'
 > bin/ws_harness http report HTTP
 > open report/report.html  # on mac
-'''
+```
 
 Legend
 ------
 * images = docker images
 * cluster = set of docker containers
 * base_* images = infrastructure images, containing heavy pieces such as OTP or matplotlib, which take a while to build
-* '--all' = flag to indicate deletion/creation of the base_* images
+* `--all` = flag to indicate deletion/creation of the base_* images

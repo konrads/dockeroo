@@ -27,7 +27,7 @@ def filter_nans(df):
     val_col = df.columns[-1]
     return df[np.isfinite(df[val_col])]
 
-def plot(df, name, xaxis, yaxis, xsize=6, ysize=3, norm_x=True, colour='#000066', marker='.', markersize=5.0, linestyle='-', types=choice_types, **filters):
+def plot(df, name, xaxis, yaxis, xsize=8, ysize=4, norm_x=True, colour='#000066', marker='.', markersize=5.0, linestyle='-', types=choice_types, **filters):
     df = filter_nans(df)
     if norm_x:
         df[xaxis] = df[xaxis] - min(df[xaxis])
@@ -76,8 +76,8 @@ def main():
     parser.add_argument('yaxis', help='y axis')
     parser.add_argument('filters', help='filters ie. column=value', nargs='*')
     parser.add_argument('--name', type=str, help='alternative graph name')
-    parser.add_argument('--xsize', type=int, default=10, help='graph X size')
-    parser.add_argument('--ysize', type=int, default=5, help='graph Y size')
+    parser.add_argument('--xsize', type=int, default=8, help='graph X size')
+    parser.add_argument('--ysize', type=int, default=4, help='graph Y size')
     parser.add_argument('--norm_x', type=bool, default=True, help='normalize x axis')
     parser.add_argument('--colour', type=str, default='#000066', help='graph colour')
     parser.add_argument('--marker', type=str, default='.', choices=[',', '+', '.', 'o', '*'])

@@ -56,6 +56,14 @@ stop_cluster() {
   docker stop c1 c2 c3 s1
 }
 
+verify_report_name() {
+  if [ "$1" == "" ]
+  then
+    echo "  No report name specified"
+    usage
+  fi
+}
+
 if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
 
 case "$1 $2" in
@@ -136,16 +144,29 @@ case "$1 $2" in
     echo -e "  ${red}test scala-iptables unimplemented${reset}"
     exit -11
     ;;
-  "report ")
-    echo "  ...merge reports cluster"
-    mkdir -p report
-    docker logs c1 > report/raw.csv
-    docker logs c2 | tail -n+2 >> report/raw.csv
-    docker logs c3 | tail -n+2 >> report/raw.csv
-    ;;
   *)
-    echo -e "  ${bold}Not a $(basename $0) command, delegating to dockeroo${reset}"
-    $harness $@
+    case "$1" in 
+      "report")
+        verify_report_name $2
+        report_name=$2
+        echo "  ...copy report templates"
+        rm -rf report
+        cp -r src/ws/report/fs/opt/dockeroo/report_template report
+        echo "  ...merge reports cluster"
+        docker logs c1 > report/raw.csv
+        docker logs c2 | tail -n+2 >> report/raw.csv
+        docker logs c3 | tail -n+2 >> report/raw.csv
+        echo "  ...consolidate start|end|error events"
+        docker run --rm --name "report_consolidate" --privileged -v $(pwd)/report:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/consolidate.py raw.csv raw.consolidated.csv
+        echo "  ...generate html reporter"
+        docker run --rm --name "report_generate" --privileged -v $(pwd)/report:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/orchestrate.py raw.consolidated.csv $report_name
+        echo "  ... report ready @ file://$(pwd)/report/report.html..."
+        ;;
+      *)
+        echo -e "  ${bold}Not a $(basename $0) command, delegating to dockeroo${reset}"
+        $harness $@
+        ;;
+    esac
     ;;
 esac
 

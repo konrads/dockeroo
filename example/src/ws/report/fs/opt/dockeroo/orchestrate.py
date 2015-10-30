@@ -9,24 +9,21 @@
 from subprocess import call
 import argparse
 import jinja2
+import os
 import numpy as np
 import pandas as pd
+import pprint as pp
 import sys
+
+plot_csv_exec = "%s/plot_csv.py" % os.path.dirname(os.path.realpath(__file__))
+
+root_colour = '#00006E'
+status_colour = '#600020'
+cat_colour = '#004400'
 
 def filter_nans(df):
     val_col = df.columns[-1]
     return df[np.isfinite(df[val_col])]
-
-def marker_colour_gen():
-    min_colour = 0x110000
-    max_colour = 0xee0000
-    diff = max_colour - min_colour
-    curr_colour = 0x123456
-    while True:
-        yield '#' + hex(curr_colour+min_colour)[2:]
-        curr_colour = (curr_colour + 0x6543456) % diff
-
-marker_colour = marker_colour_gen()
 
 def get_stats(col):
     return {
@@ -41,14 +38,13 @@ def run(File, Cmd):
     sys.stdout.flush()
     call(Cmd, shell=True)
 
-def get_imgs(data_file, prefix, **filters):
+def get_imgs(data_file, prefix, colour, **filters):
     filters = ' '.join(['%s=%s' % (k,v) for k,v in filters.iteritems()])
-    colour = marker_colour.next()
     return {
         'scatter_file':   'img/%s.scatter.png' % prefix,
-        'scatter_cmd':    'python plot_csv.py --name=img/%s --colour=%s %s ts delta %s' % (prefix, colour, data_file, filters),
+        'scatter_cmd':    'python %s --name=img/%s --colour=%s %s ts delta %s' % (plot_csv_exec, prefix, colour, data_file, filters),
         'histogram_file': 'img/%s.histogram.png' % prefix,
-        'histogram_cmd':  'python plot_csv.py --name=img/%s --colour=%s %s ts delta %s' % (prefix, colour, data_file, filters)
+        'histogram_cmd':  'python %s --name=img/%s --colour=%s %s ts delta %s' % (plot_csv_exec, prefix, colour, data_file, filters)
     }
 
 def gen_imgs(root):
@@ -84,7 +80,7 @@ def calc_stats(df, data_file):
         'status_children': status_children
     }
     if not filter_nans(df).empty:
-        root_info['imgs'] = get_imgs(data_file, root_ns)
+        root_info['imgs'] = get_imgs(data_file, root_ns, root_colour)
     for status in statuses:
         status_df = df[df[status_col] == status]
         if not status_df.empty:
@@ -97,7 +93,7 @@ def calc_stats(df, data_file):
             }
             # plots must have at least 1 finite val
             if not filter_nans(status_df).empty:
-                status_info['imgs'] = get_imgs(data_file, status_ns, status=status)              
+                status_info['imgs'] = get_imgs(data_file, status_ns, status_colour, status=status)              
             for cat in cats:
                 cat_df = status_df[status_df[cat_col] == cat]
                 if not cat_df.empty:
@@ -108,7 +104,7 @@ def calc_stats(df, data_file):
                     }
                     # plots must have at least 1 finite val
                     if not filter_nans(cat_df).empty:
-                        cat_info['imgs'] = get_imgs(data_file, cat_ns, status=status, client=cat)
+                        cat_info['imgs'] = get_imgs(data_file, cat_ns, cat_colour, status=status, client=cat)
                     cat_children.append(cat_info)
             status_children.append(status_info)
     return root_info
@@ -123,8 +119,10 @@ def main():
     stats = calc_stats(df, args.data_file)
     stats['report_name'] = args.report_name
     gen_imgs(stats)
+    print "\nFinal stats:"
+    pp.pprint(stats, indent=2)
+    print "\nGenerating reports:"
     gen_report(stats)
-    print "\nFinal stats:" ; import json; print json.dumps(stats, indent=2)
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,51 @@
+body {
+    font-family: Verdana, sans-serif;
+    font-size:.8em;
+    margin-top:20px;
+    margin-bottom:20px;
+    margin-left:40px;
+    margin-right:40px;
+    background-color:#ECECEA;
+}
+
+td {
+    margin-left:10px;
+    vertical-align:top;
+}
+
+a:link { color:black; }
+a:visited { color:black; }
+
+.h1 {
+    font-size:3.0em;
+    text-decoration: underline;  /* simulating link look */
+    margin-left:3px;
+}
+
+.h2 {
+    font-size:2.3em;
+    margin-left:3px;
+}
+
+.h3 {
+    font-size:1.7em;
+    margin-left:3px;
+}
+
+.summary {
+    margin-bottom:50px;
+}
+
+.status_children {
+    margin-left:50px;
+    margin-bottom:50px;
+}
+
+.cat_children {
+    margin-left:100px;
+    margin-bottom:50px;
+}
+
+.text-value { margin-left:60px; }
+
+.blindable_div { display:none; }

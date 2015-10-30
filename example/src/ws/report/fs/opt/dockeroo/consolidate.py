@@ -40,11 +40,12 @@ def consolidate(df):
 
 def main():
     parser = argparse.ArgumentParser(description='Consolidate start|end|error audits.')
-    parser.add_argument('data_file', help='data csv file, with header')
+    parser.add_argument('input_file', help='input data csv file, with header')
+    parser.add_argument('output_file', help='output file for consolidated data')
     args = parser.parse_args()
     
-    df = pd.read_csv(args.data_file, na_values=['na'])
-    print consolidate(df).to_csv(index=False, float_format='%.0f')
+    df = pd.read_csv(args.input_file, na_values=['na'])
+    consolidate(df).to_csv(args.output_file, index=False, float_format='%.0f')
 
 if __name__ == "__main__":
     main()

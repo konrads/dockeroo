@@ -9,8 +9,13 @@
 from subprocess import call
 import argparse
 import jinja2
+import numpy as np
 import pandas as pd
 import sys
+
+def filter_nans(df):
+    val_col = df.columns[-1]
+    return df[np.isfinite(df[val_col])]
 
 def marker_colour_gen():
     min_colour = 0x110000
@@ -47,14 +52,17 @@ def get_imgs(data_file, prefix, **filters):
     }
 
 def gen_imgs(root):
-    run(root['imgs']['scatter_file'], root['imgs']['scatter_cmd'])
-    run(root['imgs']['histogram_file'], root['imgs']['histogram_cmd'])
+    if 'imgs' in root:
+        run(root['imgs']['scatter_file'], root['imgs']['scatter_cmd'])
+        run(root['imgs']['histogram_file'], root['imgs']['histogram_cmd'])
     for status in root['status_children']:
-        run(status['imgs']['scatter_file'], status['imgs']['scatter_cmd'])
-        run(status['imgs']['histogram_file'], status['imgs']['histogram_cmd'])
+        if 'imgs' in status:
+            run(status['imgs']['scatter_file'], status['imgs']['scatter_cmd'])
+            run(status['imgs']['histogram_file'], status['imgs']['histogram_cmd'])
         for cat in status['cat_children']:
-            run(cat['imgs']['scatter_file'], cat['imgs']['scatter_cmd'])
-            run(cat['imgs']['histogram_file'], cat['imgs']['histogram_cmd'])
+            if 'imgs' in cat:
+                run(cat['imgs']['scatter_file'], cat['imgs']['scatter_cmd'])
+                run(cat['imgs']['histogram_file'], cat['imgs']['histogram_cmd'])
 
 def gen_report(root):
     # Generate html report
@@ -73,9 +81,10 @@ def calc_stats(df, data_file):
     root_info = {
         'name': root_ns,
         'stats': get_stats(df[delta_col]),
-        'imgs': get_imgs(data_file, root_ns),
         'status_children': status_children
     }
+    if not filter_nans(df).empty:
+        root_info['imgs'] = get_imgs(data_file, root_ns)
     for status in statuses:
         status_df = df[df[status_col] == status]
         if not status_df.empty:
@@ -84,18 +93,22 @@ def calc_stats(df, data_file):
             status_info = {
                 'name': status,
                 'stats': get_stats(status_df[delta_col]),
-                'imgs': get_imgs(data_file, status_ns, status=status),
                 'cat_children': cat_children
             }
+            # plots must have at least 1 finite val
+            if not filter_nans(status_df).empty:
+                status_info['imgs'] = get_imgs(data_file, status_ns, status=status)              
             for cat in cats:
                 cat_df = status_df[status_df[cat_col] == cat]
                 if not cat_df.empty:
                     cat_ns = '%s_%s' % (status, cat)
                     cat_info = {
                         'name': cat,
-                        'stats': get_stats(cat_df[delta_col]),
-                        'imgs': get_imgs(data_file, cat_ns, status=status, client=cat)
+                        'stats': get_stats(cat_df[delta_col])
                     }
+                    # plots must have at least 1 finite val
+                    if not filter_nans(cat_df).empty:
+                        cat_info['imgs'] = get_imgs(data_file, cat_ns, status=status, client=cat)
                     cat_children.append(cat_info)
             status_children.append(status_info)
     return root_info

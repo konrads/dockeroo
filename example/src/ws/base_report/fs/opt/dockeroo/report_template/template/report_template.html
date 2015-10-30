@@ -16,8 +16,12 @@
       <tr><td>Mean:</td><td>{{'%.2f' % stats.mean}}</td></tr>
       <tr><td>Median:</td><td>{{'%.2f' % stats.median}}</td></tr>
       <tr><td>Std:</td><td>{{'%.2f' % stats.std}}</td></tr>
-      <tr><td>Scatter plot:</td><td><img src="{{imgs.scatter_file}}"/></td></tr>
-      <tr><td>Histogram:</td><td><img src="{{imgs.histogram_file}}"/></td></tr>
+      {% if imgs %}
+          <tr><td>Scatter plot:</td><td><img src="{{imgs.scatter_file}}"/></td></tr>
+          <tr><td>Histogram:</td><td><img src="{{imgs.histogram_file}}"/></td></tr>
+      {% else %}
+          <tr><td>...no finite data for plots...</td><td></td></tr>
+      {% endif %}
 </tbody></table>
 
 {% if status_children|length > 0 %}
@@ -27,11 +31,15 @@
         <div class="blindable_div">
             <table><tbody>
                 <tr><td>Count:</td><td>{{s.stats.cnt}}</td></tr>
-                <tr><td>Mean:</td><td>{{'%.2f' % s.stats.mean}}%</td></tr>
-                <tr><td>Median:</td><td>{{'%.2f' % s.stats.median}}%</td></tr>
-                <tr><td>Std:</td><td>{{'%.2f' % s.stats.std}}%</td></tr>
-                <tr><td>Scatter plot:</td><td><img src="{{s.imgs.scatter_file}}"/></td></tr>
-                <tr><td>Histogram:</td><td><img src="{{s.imgs.histogram_file}}"/></td></tr>
+                <tr><td>Mean:</td><td>{{'%.2f' % s.stats.mean}}</td></tr>
+                <tr><td>Median:</td><td>{{'%.2f' % s.stats.median}}</td></tr>
+                <tr><td>Std:</td><td>{{'%.2f' % s.stats.std}}</td></tr>
+                {% if s.imgs %}
+                    <tr><td>Scatter plot:</td><td><img src="{{s.imgs.scatter_file}}"/></td></tr>
+                    <tr><td>Histogram:</td><td><img src="{{s.imgs.histogram_file}}"/></td></tr>
+                {% else %}
+                    <tr><td>...no finite data for plots...</td><td></td></tr>
+                {% endif %}
             </tbody></table>
 
             {% if s.cat_children|length > 0 %}
@@ -41,11 +49,15 @@
                     <div class="blindable_div">
                         <table><tbody>
                             <tr><td>Count:</td><td>{{c.stats.cnt}}</td></tr>
-                            <tr><td>Mean:</td><td>{{'%.2f' % c.stats.mean}}%</td></tr>
-                            <tr><td>Median:</td><td>{{'%.2f' % c.stats.median}}%</td></tr>
-                            <tr><td>Std:</td><td>{{'%.2f' % c.stats.std}}%</td></tr>
-                            <tr><td>Scatter plot:</td><td><img src="{{c.imgs.scatter_file}}"/></td></tr>
-                            <tr><td>Histogram:</td><td><img src="{{c.imgs.histogram_file}}"/></td></tr>
+                            <tr><td>Mean:</td><td>{{'%.2f' % c.stats.mean}}</td></tr>
+                            <tr><td>Median:</td><td>{{'%.2f' % c.stats.median}}</td></tr>
+                            <tr><td>Std:</td><td>{{'%.2f' % c.stats.std}}</td></tr>
+                            {% if c.imgs %}
+                                <tr><td>Scatter plot:</td><td><img src="{{c.imgs.scatter_file}}"/></td></tr>
+                                <tr><td>Histogram:</td><td><img src="{{c.imgs.histogram_file}}"/></td></tr>
+                            {% else %}
+                                <tr><td>...no finite data for plots...</td><td></td></tr>
+                            {% endif %}
                         </tbody></table>
                     </div>
                     <br/>

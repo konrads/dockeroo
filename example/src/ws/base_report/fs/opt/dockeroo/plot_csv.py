@@ -9,15 +9,26 @@
 import argparse
 import matplotlib.pylab as plt
 import matplotlib
+import numpy as np
 import pandas as pd
 import sys
+
+# use following flag to remove SettingWithCopyWarning warnings on:
+# df[xaxis] = df[xaxis] - min(df[xaxis])
+# as per:
+# http://stackoverflow.com/questions/20625582/how-to-deal-with-this-pandas-warning
+pd.options.mode.chained_assignment = None
 
 TYPES = ['scatter', 'line', 'histogram']
 choice_types = TYPES[:]
 choice_types.append('all')
 
-def plot(df, name, xaxis, yaxis, xsize=8, ysize=4, norm_x=True, colour='#000066', marker='.', markersize=5.0, linestyle='-', types=choice_types, **filters):
-    # normalize x axis, if required
+def filter_nans(df):
+    val_col = df.columns[-1]
+    return df[np.isfinite(df[val_col])]
+
+def plot(df, name, xaxis, yaxis, xsize=6, ysize=3, norm_x=True, colour='#000066', marker='.', markersize=5.0, linestyle='-', types=choice_types, **filters):
+    df = filter_nans(df)
     if norm_x:
         df[xaxis] = df[xaxis] - min(df[xaxis])
 

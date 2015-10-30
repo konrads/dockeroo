@@ -6,7 +6,18 @@ Docker based tests. Organized in:
 * example - sample usage.  Holds docker based WS and HTTP tests
   * bin - executable scripts, utilize dockeroo bin
   * src - Dockerfiles and file system artefacts for every container
-  * apps - source code for tested apps (erl/scala server/clients)
+  * apps - source code for tested apps (erl/scala server/clients).  In this example, the code is expected to be compiled outside of the docker containers (eg. in `dev`).  For the test purposes - the code is run within containers (note: `dev` compiled artefacts might not work within a specific container!).  For this example, initialize via:
+  ```bash
+  > # make sure you have rebar in path
+
+  > # compile the server that echos WS/HTTP messages
+  > cd example/apps/erl/echo_server
+  > rebar get-deps compile
+
+  > # compile the client
+  > cd ../client
+  > rebar get-deps compile
+  ```
 
 Run the example
 ---------------

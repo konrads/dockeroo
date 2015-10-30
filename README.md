@@ -19,6 +19,7 @@ Docker based tests. Organized in:
   > rebar get-deps compile
   ```
 
+
 Run the example
 ---------------
 ```bash
@@ -43,6 +44,10 @@ Run the example
 > bin/ws_harness http report HTTP
 > open report/report.html  # on mac
 ```
+
+You can now view the test report in your browser:
+![sample report](https://github.com/konrads/dockeroo/raw/screenshots/screenshots/report.screenshot.png)
+
 
 Legend
 ------

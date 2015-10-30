@@ -46,7 +46,7 @@ Run the example
 ```
 
 You can now view the test report in your browser:
-![sample report](https://github.com/konrads/dockeroo/raw/screenshots/screenshots/report.screenshot.png)
+![sample report](/../screenshots/screenshots/report.screenshot.png?raw=true "Sample Report")
 
 
 Legend

@@ -1,10 +1,10 @@
 Dockeroo
 ========
-Shell based scripts for setup and running of docker based integration functional (performance...?) tests. Consists of core scripts residing in `bin`, and best practice suggestions in `example`.  Requires ![docker](https://github.com/docker/docker "docker") only.
+Shell based scripts for setup and running of docker based integration functional (performance...?) tests. Consists of core scripts residing in `bin`, and best practice suggestions in `example`.  Requires [docker](https://github.com/docker/docker) only.
 
 Philosophy
 ----------
-This project was born out of the need to test failure scenarios (machine down|net split) in distributed environments. Will such failures cause data loss, data duplication, overall failure or eventual healing? To set this up I utilize docker for image setup and container start/stop/pause/unpause, other tools such as ![docker-compose](https://github.com/docker/compose "docker-compose") and ![docker-compose](https://github.com/weaveworks/weave "weave") were evaluated, but deemed overkill for this purpose. Net splits are implemented via iptables.
+This project was born out of the need to test failure scenarios (machine down|net split) in distributed environments. Will such failures cause data loss, data duplication, overall failure or eventual healing? To set this up I utilize docker for image setup and container start/stop/pause/unpause, other tools such as [docker-compose](https://github.com/docker/compose) and [weave](https://github.com/weaveworks/weave) were evaluated, but deemed overkill for this purpose. Net splits are implemented via iptables.
 
 The main dockeroo scripts:
 * `bin/harness` - facilitates operations on the docker image|container as well as forcing of net failure|healing via iptables

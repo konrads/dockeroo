@@ -1,4 +1,4 @@
-%% Simple echo server
+%% WS handler, replies with request payload
 -module(echo_ws_handler).
 
 -behaviour(cowboy_websocket_handler).

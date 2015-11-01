@@ -1,4 +1,4 @@
-%% Simple echo server
+%% HTTP/WS server.
 -module(echo_server).
 
 %% public API
@@ -7,7 +7,7 @@
   start/1
 ]).
 
-% to be started once only!
+% for command line
 start([]) ->
   start().
 

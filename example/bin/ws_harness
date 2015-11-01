@@ -82,26 +82,26 @@ case "$1 $2" in
     ;;
   "test tools")
     delete_cluster
-    docker rm -f c4 c5
     set -e
     docker run --name "s1" --hostname "s1" --privileged -tid --entrypoint=netcat "ws/server_erl" -lk 1234
-    # test 'good' scenario, no pauses/stops/iptables manipulation
-    echo msg1 | docker run --name "c1" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
-    # test the paused scenario
+    # send msg1 - should get through
+    echo msg1 | docker run --rm --name "c1" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 5 s1 1234
+    # pause, send msg2, unpause.  Message should get through *after* unpause
     $harness node pause s1
     set +e
-    echo msg2 | docker run --name "c2" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
+    echo msg2 | docker run --rm --name "c1" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 5 s1 1234
     set -e
     $harness node unpause s1
-    # switch iptables off
+    # iptables drop, send msg3-should-be-dropped, iptables accept.  Message should not get through
     $harness iptables drop INPUT s1
     set +e
-    echo msg3-should-not-show | docker run --name "c3" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
+    echo msg3-should-be-dropped | docker run --rm --name "c1" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 5 s1 1234
     set -e
     $harness iptables accept s1
-    # another good
-    echo msg4 | docker run --name "c4" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 3 s1 1234
-    expected_msg_log=$'msg1\nmsg2\nmsg4' # note: expecting the paused msg, but not iptables drop
+    # send another message to confirm connectivity
+    echo msg4 | docker run --name "c1" --privileged --link s1:s1 -i --entrypoint=netcat "ws/client" -w 5 s1 1234
+    # expect all but the iptables dropped messages
+    expected_msg_log=$'msg1\nmsg2\nmsg4'
     assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"  # remove ^Ms
     ;;
   "test erl-ws-iptables")
@@ -140,8 +140,12 @@ case "$1 $2" in
     echo "  ...stopping cluster"
     stop_cluster
     ;;
-  "test scala-iptables")
-    echo -e "  ${red}test scala-iptables unimplemented${reset}"
+  "test scala-ws-iptables")
+    echo -e "  ${red}test scala-ws-iptables unimplemented${reset}"
+    exit -11
+    ;;
+  "test scala-http-iptables")
+    echo -e "  ${red}test scala-http-iptables unimplemented${reset}"
     exit -11
     ;;
   *)
@@ -160,7 +164,7 @@ case "$1 $2" in
         docker run --rm --name "report_consolidate" --privileged -v $(pwd)/report:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/consolidate.py raw.csv raw.consolidated.csv
         echo "  ...generate html reporter"
         docker run --rm --name "report_generate" --privileged -v $(pwd)/report:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/orchestrate.py raw.consolidated.csv $report_name
-        echo "  ... report ready @ file://$(pwd)/report/report.html..."
+        echo "  ...report ready @ file://$(pwd)/report/report.html..."
         ;;
       *)
         echo -e "  ${bold}Not a $(basename $0) command, delegating to dockeroo${reset}"

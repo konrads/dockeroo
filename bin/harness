@@ -21,7 +21,7 @@ usage() {
   echo "  Usage:"
   echo "    help:                                display this"
   echo "    images create [--all]:               create node image"
-  echo "    images delete [--all]:               delete node image, --all includes */base.*"
+  echo "    images delete [--all]:               delete node image, --all includes */based*"
   echo "    cluster status:                      show images/nodes status"
   echo "    cluster cleanup:                     delete dangling (untagged) and debug images/nodes"
   echo "    node pause <id>:                     pause node <id>"

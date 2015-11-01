@@ -1,3 +1,4 @@
+%% HTTP handler that repliest with 200 "ok"
 -module(echo_http_handler).
 
 -behaviour(cowboy_http_handler).

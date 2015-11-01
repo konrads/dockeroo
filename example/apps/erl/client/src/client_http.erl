@@ -1,3 +1,4 @@
+%% HTTP client, initiates periodic HTTP communication, logging success|errors.
 -module(client_http).
 
 -export([
@@ -14,6 +15,7 @@ start([Url]) ->
   io:format("status,client,req_id,ts\n"),
   loop(Url, Hostname, Delay, 0).
 
+%% Periodically spawn HTTP communications in a separate, non-blocking process.
 loop(Url, Hostname, Delay, Id) ->
   spawn(
     fun() ->

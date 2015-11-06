@@ -189,8 +189,10 @@ case "$1 $2" in
         cp -r src/ws/report/fs/opt/dockeroo/report_template report
         echo "  ...merge reports cluster"
         docker logs c1 > report/raw.csv
-        docker logs c2 | tail -n+2 >> report/raw.csv
-        docker logs c3 | tail -n+2 >> report/raw.csv
+        for i in `seq 2 $node_count`;
+        do
+          docker logs c$i | tail -n+2 >> report/raw.csv
+        done
         echo "  ...consolidate start|end|error events"
         docker run --rm --name "report_consolidate" --privileged -v $(pwd)/report:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/consolidate.py raw.csv raw.consolidated.csv
         echo "  ...generate html reporter"

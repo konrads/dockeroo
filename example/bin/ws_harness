@@ -4,6 +4,13 @@ curr_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 dockeroo_dir=../bin
 . $dockeroo_dir/test_commons.sh
 harness="env dockeroo_quiet=true $dockeroo_dir/harness"
+node_count=10
+cluster_nodes=""
+for i in $(seq 1 $node_count);
+do
+  cluster_nodes="$cluster_nodes c$i"
+done
+cluster_nodes="$cluster_nodes s1"
 
 green="\033[32m"
 red="\033[31m"
@@ -32,8 +39,8 @@ usage() {
 
 delete_cluster() {
   echo "  ...deleting cluster"
-  docker unpause s1 c1 c2 c3
-  docker rm -f s1 c1 c2 c3
+  docker unpause $cluster_nodes
+  docker rm -f $cluster_nodes
 }
 
 create_erl_server() {
@@ -48,20 +55,22 @@ create_go_server() {
 
 create_erl_ws_clients() {
   echo "  ...creating erl ws clients"
-  docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_ws start ws://s1:8888/echo-ws
-  docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_ws start ws://s1:8888/echo-ws
-  docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_ws start ws://s1:8888/echo-ws
+  for i in `seq 1 $node_count`;
+  do
+    docker run --name "c$i" --hostname "c$i" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_ws start ws://s1:8888/echo-ws
+  done
 }
 
 create_erl_http_clients() {
   echo "  ...creating erl http clients"
-  docker run --name "c1" --hostname "c1" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_http start http://s1:8888/echo-http
-  docker run --name "c2" --hostname "c2" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_http start http://s1:8888/echo-http
-  docker run --name "c3" --hostname "c3" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_http start http://s1:8888/echo-http
+  for i in `seq 1 $node_count`;
+  do
+    docker run --name "c$i" --hostname "c$i" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_http start http://s1:8888/echo-http
+  done
 }
 
 stop_cluster() {
-  docker stop c1 c2 c3 s1
+  docker stop $cluster_nodes
 }
 
 verify_report_name() {
@@ -70,6 +79,41 @@ verify_report_name() {
     echo "  No report name specified"
     usage
   fi
+}
+
+test_client_server() {
+  delete_cluster
+  local create_server_cmd=$1
+  local create_clients_cmd=$2
+  local test_length=100 #s
+  set -e
+  $create_server_cmd
+  $create_clients_cmd
+  echo "  ...sleeping for test length = ${test_length}s"
+  sleep $test_length
+  echo "  ...stopping cluster"
+  stop_cluster
+}
+
+test_client_server_with_ip_tables() {
+  delete_cluster
+  set -e
+  local create_server_cmd=$1
+  local create_clients_cmd=$2
+  $create_server_cmd
+  $create_clients_cmd
+  local i=1
+  while [ $i -le 5 ]
+  do
+    echo "  ...$i: flip iptables"
+    $harness iptables drop OUTPUT s1
+    sleep 10
+    $harness iptables accept s1
+    sleep 10
+    i=$[$i+1]
+  done
+  echo "  ...stopping cluster"
+  stop_cluster
 }
 
 if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
@@ -113,78 +157,19 @@ case "$1 $2" in
     assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"  # remove ^Ms
     ;;
   "test erl-http")
-    delete_cluster
-    set -e
-    create_erl_server
-    sleep 5 # warmup delay
-    create_erl_http_clients
-    sleep 100
-    echo "  ...stopping cluster"
-    stop_cluster
+    test_client_server create_erl_server create_erl_http_clients
     ;;
   "test go-http")
-    delete_cluster
-    set -e
-    create_go_server
-    sleep 5 # warmup delay
-    create_erl_http_clients
-    sleep 100
-    echo "  ...stopping cluster"
-    stop_cluster
+    test_client_server create_go_server create_erl_http_clients
     ;;
   "test erl-ws-iptables")
-    delete_cluster
-    set -e
-    create_erl_server
-    create_erl_ws_clients
-    i=1
-    while [ $i -le 5 ]
-    do
-      echo "  ...$i: flip iptables"
-      $harness iptables drop OUTPUT s1
-      sleep 10
-      $harness iptables accept s1
-      sleep 10
-      i=$[$i+1]
-    done
-    echo "  ...stopping cluster"
-    stop_cluster
+    test_client_server_with_ip_tables create_erl_server create_erl_ws_clients
     ;;
   "test erl-http-iptables")
-    delete_cluster
-    set -e
-    create_erl_server
-    create_erl_http_clients
-    i=1
-    while [ $i -le 5 ]
-    do
-      echo "  ...$i: flip iptables"
-      $harness iptables drop OUTPUT s1
-      sleep 10
-      $harness iptables accept s1
-      sleep 10
-      i=$[$i+1]
-    done
-    echo "  ...stopping cluster"
-    stop_cluster
+    test_client_server_with_ip_tables create_erl_server create_erl_http_clients
     ;;
   "test go-http-iptables")
-    delete_cluster
-    set -e
-    create_go_server
-    create_erl_http_clients
-    i=1
-    while [ $i -le 5 ]
-    do
-      echo "  ...$i: flip iptables"
-      $harness iptables drop OUTPUT s1
-      sleep 10
-      $harness iptables accept s1
-      sleep 10
-      i=$[$i+1]
-    done
-    echo "  ...stopping cluster"
-    stop_cluster
+    test_client_server_with_ip_tables create_go_server create_erl_http_clients
     ;;
   "test scala-ws-iptables")
     echo -e "  ${red}test scala-ws-iptables unimplemented${reset}"

@@ -17,8 +17,11 @@ usage() {
   echo "    cluster create-ws:                   create WS cluster"
   echo "    cluster create-http:                 create HTTP cluster"
   echo "    test tools:                          test dockeroo tools"
+  echo "    test erl-http:                       test Erlang HTTP server"
+  echo "    test go-http:                        test Erlang HTTP server"
   echo "    test erl-ws-iptables:                test Erlang WS server and iptables drop/accept"
   echo "    test erl-http-iptables:              test Erlang HTTP server and iptables drop/accept"
+  echo "    test go-http-iptables:               test Go HTTP server and iptables drop/accept"
   echo "    test scala-ws-iptables:              test Scala WS server and iptables drop/accept"
   echo "    test scala-http-iptables:            test Scala HTTP server and iptables drop/accept"
   echo "    report:                              report from the last run"
@@ -36,6 +39,11 @@ delete_cluster() {
 create_erl_server() {
   echo "  ...creating erl server"
   docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/apps/erl/echo_server:/dev/host-server -tid "ws/server_erl" echo_server
+}
+
+create_go_server() {
+  echo "  ...creating go server"
+  docker run --name "s1" --hostname "s1" --privileged -tid "ws/server_go"
 }
 
 create_erl_ws_clients() {
@@ -104,6 +112,26 @@ case "$1 $2" in
     expected_msg_log=$'msg1\nmsg2\nmsg4'
     assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"  # remove ^Ms
     ;;
+  "test erl-http")
+    delete_cluster
+    set -e
+    create_erl_server
+    sleep 5 # warmup delay
+    create_erl_http_clients
+    sleep 100
+    echo "  ...stopping cluster"
+    stop_cluster
+    ;;
+  "test go-http")
+    delete_cluster
+    set -e
+    create_go_server
+    sleep 5 # warmup delay
+    create_erl_http_clients
+    sleep 100
+    echo "  ...stopping cluster"
+    stop_cluster
+    ;;
   "test erl-ws-iptables")
     delete_cluster
     set -e
@@ -126,6 +154,24 @@ case "$1 $2" in
     delete_cluster
     set -e
     create_erl_server
+    create_erl_http_clients
+    i=1
+    while [ $i -le 5 ]
+    do
+      echo "  ...$i: flip iptables"
+      $harness iptables drop OUTPUT s1
+      sleep 10
+      $harness iptables accept s1
+      sleep 10
+      i=$[$i+1]
+    done
+    echo "  ...stopping cluster"
+    stop_cluster
+    ;;
+  "test go-http-iptables")
+    delete_cluster
+    set -e
+    create_go_server
     create_erl_http_clients
     i=1
     while [ $i -le 5 ]

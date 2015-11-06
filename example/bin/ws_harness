@@ -55,7 +55,7 @@ create_go_server() {
 
 create_erl_ws_clients() {
   echo "  ...creating erl ws clients"
-  for i in `seq 1 $node_count`;
+  for i in $(seq 1 $node_count);
   do
     docker run --name "c$i" --hostname "c$i" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_ws start ws://s1:8888/echo-ws
   done
@@ -63,7 +63,7 @@ create_erl_ws_clients() {
 
 create_erl_http_clients() {
   echo "  ...creating erl http clients"
-  for i in `seq 1 $node_count`;
+  for i in $(seq 1 $node_count);
   do
     docker run --name "c$i" --hostname "c$i" --privileged -v $(pwd)/apps/erl/client:/dev/host-client --link s1:s1 -tid "ws/client" client_http start http://s1:8888/echo-http
   done
@@ -184,20 +184,22 @@ case "$1 $2" in
       "report")
         verify_report_name $2
         report_name=$2
+        report_dir=report/$report_name
         echo "  ...copy report templates"
-        rm -rf report
-        cp -r src/ws/report/fs/opt/dockeroo/report_template report
+        rm -rf $report_dir
+        mkdir -p report
+        cp -r src/ws/report/fs/opt/dockeroo/report_template $report_dir
         echo "  ...merge reports cluster"
-        docker logs c1 > report/raw.csv
-        for i in `seq 2 $node_count`;
+        docker logs c1 > $report_dir/raw.csv
+        for i in $(seq 2 $node_count);
         do
-          docker logs c$i | tail -n+2 >> report/raw.csv
+          docker logs c$i | tail -n+2 >> $report_dir/raw.csv
         done
         echo "  ...consolidate start|end|error events"
-        docker run --rm --name "report_consolidate" --privileged -v $(pwd)/report:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/consolidate.py raw.csv raw.consolidated.csv
+        docker run --rm --name "report_consolidate" --privileged -v $(pwd)/$report_dir:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/consolidate.py raw.csv raw.consolidated.csv
         echo "  ...generate html reporter"
-        docker run --rm --name "report_generate" --privileged -v $(pwd)/report:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/orchestrate.py raw.consolidated.csv $report_name
-        echo "  ...report ready @ file://$(pwd)/report/report.html..."
+        docker run --rm --name "report_generate" --privileged -v $(pwd)/$report_dir:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/orchestrate.py raw.consolidated.csv $report_name
+        echo "  ...report ready @ file://$(pwd)/$report_dir/report.html..."
         ;;
       *)
         echo -e "  ${bold}Not a $(basename $0) command, delegating to dockeroo${reset}"

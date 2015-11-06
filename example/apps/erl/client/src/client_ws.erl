@@ -20,7 +20,8 @@
 -record(ws_client_ctx, {
   hostname,
   job_cnt=0,
-  delay=10
+  delay=10,
+  status=disconnected
 }).
 
 start() ->
@@ -34,14 +35,14 @@ init([]) ->
   Delay = list_to_integer(os:getenv("MESSAGE_DELAY", "10")),
   Ctx = #ws_client_ctx{hostname=Hostname, delay=Delay},
   io:format("status,client,req_id,ts\n"),
-  self() ! trigger,
   {reconnect, Ctx}.
 
 onconnect(_ConnState, Ctx) ->
-  {ok, Ctx}.
+  self() ! trigger,
+  {ok, Ctx#ws_client_ctx{status=connected}}.
 
 ondisconnect(_ConnState, Ctx) ->
-  {reconnect, Ctx}.
+  {reconnect, Ctx#ws_client_ctx{status=disconnected}}.
 
 websocket_handle({binary, <<ReplyJobId:?MSG_LENGTH>>}, _ConnState, #ws_client_ctx{hostname=Hostname}=Ctx) ->
   io:format("end,~s,~b,~b\n", [Hostname, ReplyJobId, now_ts()]),
@@ -49,7 +50,7 @@ websocket_handle({binary, <<ReplyJobId:?MSG_LENGTH>>}, _ConnState, #ws_client_ct
 websocket_handle(_, _ConnState, Ctx) ->
   {ok, Ctx}.
 
-websocket_info(trigger, _ConnState, #ws_client_ctx{job_cnt=JobCnt, hostname=Hostname, delay=Delay}=Ctx) ->
+websocket_info(trigger, _ConnState, #ws_client_ctx{status=connected, job_cnt=JobCnt, hostname=Hostname, delay=Delay}=Ctx) ->
   erlang:send_after(Delay, self(), trigger),
   io:format("start,~s,~b,~b\n", [Hostname, JobCnt, now_ts()]),
   {reply, {binary, <<JobCnt:?MSG_LENGTH>>}, Ctx#ws_client_ctx{job_cnt=JobCnt+1}};

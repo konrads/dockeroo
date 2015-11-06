@@ -116,8 +116,6 @@ case "$1 $2" in
       echo "  ...no dangling nodes!"
     else
       echo "  ...unpausing, stopping and deleting nodes:"
-      # docker unpause $dangling_nodes
-      # docker stop $dangling_nodes
       docker rm -f $dangling_nodes
     fi
     echo

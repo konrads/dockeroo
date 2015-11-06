@@ -24,6 +24,7 @@ usage() {
   echo "    cluster create-ws:                   create WS cluster"
   echo "    cluster create-http:                 create HTTP cluster"
   echo "    test tools:                          test dockeroo tools"
+  echo "    test erl-ws:                         test Erlang WS server"
   echo "    test erl-http:                       test Erlang HTTP server"
   echo "    test go-http:                        test Erlang HTTP server"
   echo "    test erl-ws-iptables:                test Erlang WS server and iptables drop/accept"
@@ -32,6 +33,7 @@ usage() {
   echo "    test scala-ws-iptables:              test Scala WS server and iptables drop/accept"
   echo "    test scala-http-iptables:            test Scala HTTP server and iptables drop/accept"
   echo "    report:                              report from the last run"
+  echo "    report-all:                          shortcut to run and report all tests"
   echo "    ... or dockeroo commands:"
   $harness help
   exit 1
@@ -70,7 +72,7 @@ create_erl_http_clients() {
 }
 
 stop_cluster() {
-  docker stop $cluster_nodes
+  docker stop --time=5 $cluster_nodes
 }
 
 verify_report_name() {
@@ -107,7 +109,7 @@ test_client_server_with_ip_tables() {
   do
     echo "  ...$i: flip iptables"
     $harness iptables drop OUTPUT s1
-    sleep 10
+    sleep 5
     $harness iptables accept s1
     sleep 10
     i=$[$i+1]
@@ -156,6 +158,9 @@ case "$1 $2" in
     expected_msg_log=$'msg1\nmsg2\nmsg4'
     assert_eq "client message got through" "$expected_msg_log" "$(docker logs s1 | sed 's/.$//')"  # remove ^Ms
     ;;
+  "test erl-ws")
+    test_client_server create_erl_server create_erl_ws_clients
+    ;;
   "test erl-http")
     test_client_server create_erl_server create_erl_http_clients
     ;;
@@ -200,6 +205,16 @@ case "$1 $2" in
         echo "  ...generate html reporter"
         docker run --rm --name "report_generate" --privileged -v $(pwd)/$report_dir:/dev/host-report --workdir=/dev/host-report -ti "ws/report" /opt/dockeroo/orchestrate.py raw.consolidated.csv $report_name
         echo "  ...report ready @ file://$(pwd)/$report_dir/report.html..."
+        ;;
+    "report-all")
+        $0 test erl-ws && $0 report erl-ws
+        $0 test erl-http && $0 report erl-http
+        $0 test go-http && $0 report go-http
+        # $0 test go-ws && $0 report go-ws
+        $0 test erl-ws-iptables && $0 report erl-ws-iptables
+        $0 test erl-http-iptables && $0 report erl-http-iptables
+        $0 test go-http-iptables && $0 report go-http-iptables
+        # $0 test go-ws-iptables && $0 report go-ws-iptables
         ;;
       *)
         echo -e "  ${bold}Not a $(basename $0) command, delegating to dockeroo${reset}"

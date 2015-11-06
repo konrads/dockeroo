@@ -48,8 +48,8 @@ def plot(df, name, xaxis, yaxis, xsize=8, ysize=4, norm_x=True, colour='#000066'
         print 'Generating %s...' % t
         if t == 'histogram':
             plt.hist(df[yaxis].values, color=colour)
-            plt.xlabel(xaxis)
-            plt.ylabel(yaxis)
+            plt.xlabel(yaxis)
+            plt.ylabel('frequency')
             plt.tight_layout()
             plt.savefig(name+'.histogram.png', transparent=True)
             plt.clf()    

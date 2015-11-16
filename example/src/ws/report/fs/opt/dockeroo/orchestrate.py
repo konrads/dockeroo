@@ -21,6 +21,14 @@ root_colour = '#00006E'
 status_colour = '#600020'
 cat_colour = '#004400'
 
+def fmt_int(val):
+    """jinja int formatter, woth thousands separated by commas"""
+    return "{:,.0f}".format(val)
+
+def fmt_float(val):
+    """jinja float formatter, woth thousands separated by commas"""
+    return "{:,.2f}".format(val)
+
 def filter_nans(df):
     val_col = df.columns[-1]
     return df[np.isfinite(df[val_col])]
@@ -63,6 +71,8 @@ def gen_imgs(root):
 def gen_report(root):
     # Generate html report
     templateEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(''))
+    templateEnv.filters['fmt_int'] = fmt_int
+    templateEnv.filters['fmt_float'] = fmt_float
     report_template = templateEnv.get_template('template/report_template.html')
     with open('report.html', 'w') as report_file:
         report_cnts = report_template.render(root)

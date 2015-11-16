@@ -10,10 +10,10 @@
 <!-- Overall summary -->
 <div class="h1">Report - {{report_name}}</div>
 <table class="summary"><tbody>
-      <tr><td>Count:</td><td class="text-value">{{stats.cnt}}</td></tr>
-      <tr><td>Mean:</td><td class="text-value">{{'%.0f' % stats.mean}}</td></tr>
-      <tr><td>Median:</td><td class="text-value">{{'%.0f' % stats.median}}</td></tr>
-      <tr><td>Std:</td><td class="text-value">{{'%.2f' % stats.std}}</td></tr>
+      <tr><td>Count:</td><td class="text-value">{{stats.cnt|fmt_int}}</td></tr> <!-- stats.mean|fmt_int - replacement for '{:,.0f}'.format(stats.median) -->
+      <tr><td>Mean:</td><td class="text-value">{{stats.mean|fmt_int}}</td></tr>
+      <tr><td>Median:</td><td class="text-value">{{stats.median|fmt_int}}</td></tr>
+      <tr><td>Std:</td><td class="text-value">{{stats.std|fmt_float}}</td></tr>
       {% if imgs %}
           <tr><td>Scatter plot:</td><td><img src="{{imgs.scatter_file}}"/></td></tr>
           <tr><td>Histogram:</td><td><img src="{{imgs.histogram_file}}"/></td></tr>
@@ -30,10 +30,10 @@
             <a class="blindable_link h2" href="#none">Status: {{s.name}}</a>
             <div class="blindable_div">
                 <table><tbody>
-                    <tr><td>Count:</td><td class="text-value">{{s.stats.cnt}}</td></tr>
-                    <tr><td>Mean:</td><td class="text-value">{{'%.0f' % s.stats.mean}}</td></tr>
-                    <tr><td>Median:</td><td class="text-value">{{'%.0f' % s.stats.median}}</td></tr>
-                    <tr><td>Std:</td><td class="text-value">{{'%.2f' % s.stats.std}}</td></tr>
+                    <tr><td>Count:</td><td class="text-value">{{s.stats.cnt|fmt_int}}</td></tr>
+                    <tr><td>Mean:</td><td class="text-value">{{s.stats.mean|fmt_int}}</td></tr>
+                    <tr><td>Median:</td><td class="text-value">{{s.stats.median|fmt_int}}</td></tr>
+                    <tr><td>Std:</td><td class="text-value">{{s.stats.std|fmt_float}}</td></tr>
                     {% if s.imgs %}
                         <tr><td>Scatter plot:</td><td><img src="{{s.imgs.scatter_file}}"/></td></tr>
                         <tr><td>Histogram:</td><td><img src="{{s.imgs.histogram_file}}"/></td></tr>
@@ -50,10 +50,10 @@
                             <a class="blindable_link h3" href="#none">Client: {{c.name}}</a>
                             <div class="blindable_div">
                                 <table><tbody>
-                                    <tr><td>Count:</td><td class="text-value">{{c.stats.cnt}}</td></tr>
-                                    <tr><td>Mean:</td><td class="text-value">{{'%.0f' % c.stats.mean}}</td></tr>
-                                    <tr><td>Median:</td><td class="text-value">{{'%.0f' % c.stats.median}}</td></tr>
-                                    <tr><td>Std:</td><td class="text-value">{{'%.2f' % c.stats.std}}</td></tr>
+                                    <tr><td>Count:</td><td class="text-value">{{c.stats.cnt|fmt_int}}</td></tr>
+                                    <tr><td>Mean:</td><td class="text-value">{{c.stats.mean|fmt_int}}</td></tr>
+                                    <tr><td>Median:</td><td class="text-value">{{c.stats.median|fmt_int}}</td></tr>
+                                    <tr><td>Std:</td><td class="text-value">{{c.stats.std|fmt_float}}</td></tr>
                                     {% if c.imgs %}
                                         <tr><td>Scatter plot:</td><td><img src="{{c.imgs.scatter_file}}"/></td></tr>
                                         <tr><td>Histogram:</td><td><img src="{{c.imgs.histogram_file}}"/></td></tr>

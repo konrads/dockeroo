@@ -4,7 +4,7 @@ curr_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 dockeroo_dir=../bin
 . $dockeroo_dir/test_commons.sh
 harness="env dockeroo_quiet=true $dockeroo_dir/harness"
-node_count=10
+node_count=5
 cluster_nodes=""
 for i in $(seq 1 $node_count);
 do
@@ -25,7 +25,9 @@ usage() {
   echo "    cluster create-http:                 create HTTP cluster"
   echo "    test tools:                          test dockeroo tools"
   echo "    test erl-ws:                         test Erlang WS server"
+  echo "    test scala-ws:                       test Scala WS server"
   echo "    test erl-http:                       test Erlang HTTP server"
+  echo "    test scala-http:                     test Scala HTTP server"
   echo "    test go-http:                        test Erlang HTTP server"
   echo "    test erl-ws-iptables:                test Erlang WS server and iptables drop/accept"
   echo "    test erl-http-iptables:              test Erlang HTTP server and iptables drop/accept"
@@ -54,6 +56,27 @@ create_go_server() {
   echo "  ...creating go server"
   docker run --name "s1" --hostname "s1" --privileged -tid "ws/server_go"
 }
+
+# 2 phase server instantiation: initialization (sbt update compile), and running
+create_scala_server() {
+  echo "  ...creating scala server"
+  set +e
+  docker rm -f uninitialized_s1
+  docker rmi -f initialized_s1
+  set -e
+  echo "  ...sbt compile"
+  docker run --name "uninitialized_s1" --privileged -v $(pwd)/apps/scala/echo_server:/dev/host-server -ti "ws/server_scala" compile
+  docker commit "uninitialized_s1" "initialized_s1"
+  echo "  ...sbt run"
+  docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/apps/scala/echo_server:/dev/host-server -tid "initialized_s1" run
+  echo "  ...server warm up - 10secs"
+  sleep 10
+}
+
+# create_elixir_server() {
+#   echo "  ...creating elixir server"
+#   docker run --name "s1" --hostname "s1" --privileged -v $(pwd)/apps/elixir/echo_server:/dev/host-server -tid "ws/server_elixir"
+# }
 
 create_erl_ws_clients() {
   echo "  ...creating erl ws clients"
@@ -161,14 +184,23 @@ case "$1 $2" in
   "test erl-ws")
     test_client_server create_erl_server create_erl_ws_clients
     ;;
+  "test scala-ws")
+    test_client_server create_scala_server create_erl_ws_clients
+    ;;
   "test erl-http")
     test_client_server create_erl_server create_erl_http_clients
     ;;
   "test go-http")
     test_client_server create_go_server create_erl_http_clients
     ;;
+  "test scala-http")
+    test_client_server create_scala_server create_erl_http_clients
+    ;;
   "test erl-ws-iptables")
     test_client_server_with_ip_tables create_erl_server create_erl_ws_clients
+    ;;
+  "test scala-ws-iptables")
+    test_client_server_with_ip_tables create_scala_server create_erl_ws_clients
     ;;
   "test erl-http-iptables")
     test_client_server_with_ip_tables create_erl_server create_erl_http_clients
@@ -176,13 +208,8 @@ case "$1 $2" in
   "test go-http-iptables")
     test_client_server_with_ip_tables create_go_server create_erl_http_clients
     ;;
-  "test scala-ws-iptables")
-    echo -e "  ${red}test scala-ws-iptables unimplemented${reset}"
-    exit -11
-    ;;
   "test scala-http-iptables")
-    echo -e "  ${red}test scala-http-iptables unimplemented${reset}"
-    exit -11
+    test_client_server_with_ip_tables create_scala_server create_erl_http_clients
     ;;
   *)
     case "$1" in 
@@ -208,11 +235,18 @@ case "$1 $2" in
         ;;
     "report-all")
         $0 test erl-ws && $0 report erl-ws
+        $0 test scala-ws && $0 report scala-ws
+
         $0 test erl-http && $0 report erl-http
+        $0 test scala-http && $0 report scala-http
         $0 test go-http && $0 report go-http
         # $0 test go-ws && $0 report go-ws
+
         $0 test erl-ws-iptables && $0 report erl-ws-iptables
+        $0 test scala-ws-iptables && $0 report scala-ws-iptables
+
         $0 test erl-http-iptables && $0 report erl-http-iptables
+        $0 test scala-http-iptables && $0 report scala-http-iptables
         $0 test go-http-iptables && $0 report go-http-iptables
         # $0 test go-ws-iptables && $0 report go-ws-iptables
         ;;

@@ -7,8 +7,9 @@
 # pip install numpy pandas matplotlib
 
 import argparse
-import matplotlib.pylab as plt
 import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
 import sys

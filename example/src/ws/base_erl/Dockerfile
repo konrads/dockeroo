@@ -14,6 +14,7 @@ RUN echo "\n. /etc/profile.d/dockeroo_utils.sh" >> /etc/bash.bashrc
 RUN apt-get update
 RUN apt-get -y install curl wget python-dev python-pip build-essential git vim lsof tcpdump iptables openssl libncurses-dev libssl-dev
 # RUN apt-get -y install libfreetype6-dev libpng12-dev pkg-config
+RUN pip install --upgrade pip
 RUN pip install pdbpp ipython nose
 # RUN pip install numpy pandas matplotlib
 

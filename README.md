@@ -32,11 +32,11 @@ Run the example
 > # run tests
 > bin/ws_harness test erl-ws-iptables
 > # or
-> bin/ws_harness http erl-http-iptables
+> bin/ws_harness test erl-http-iptables
 
 > # generate report named 'HTTP'
-> bin/ws_harness http report HTTP
-> open report/report.html  # on mac
+> bin/ws_harness report HTTP
+> open report/HTTP/report.html  # on mac
 ```
 
 You can now view the test report in your browser:

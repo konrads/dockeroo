@@ -29,12 +29,15 @@ Run the example
 > # create all images, including the base ones
 > bin/ws_harness images create --all
 
-> # run tests
+> # make apps used in the tests, note: need erl18, rebar, scala2.11.7, sbt
+> pushd apps && make && popd
+
+> # run tests and generate reports from the docker cluster
 > bin/ws_harness test erl-ws-iptables
+> bin/ws_harness report WS
+> open report/WS/report.html  # on mac
 > # or
 > bin/ws_harness test erl-http-iptables
-
-> # generate report named 'HTTP'
 > bin/ws_harness report HTTP
 > open report/HTTP/report.html  # on mac
 ```
